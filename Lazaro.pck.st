@@ -1,6 +1,6 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3345] on 21 July 2018 at 9:32:29 pm'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #3345] on 21 July 2018 at 11:04:21 pm'!
 'Description Lazaro for CUIS'!
-!provides: 'Lazaro' 1 0!
+!provides: 'Lazaro' 1 1!
 !requires: 'OSProcess' 1 6 nil!
 !requires: 'SqueakCompatibility' 1 28 nil!
 SystemOrganization addCategory: #Lazaro!
@@ -67,3 +67,29 @@ activateAndSendTopToBack: aBoolean
 title
 
 	(titleMorph isNil) ifTrue: [ ^ self className] ifFalse: [ ^ (titleMorph  submorphs at: 1) contents ]! !
+
+!MenuItemMorph methodsFor: '*Lazaro' stamp: 'GC 7/21/2018 22:26:53'!
+select
+	self isSelected: true.
+	ScreenReader say: self contents.
+	owner activeSubmenu: subMenu.
+	subMenu ifNotNil: [
+		subMenu delete.
+		subMenu
+			popUpAdjacentTo: (Array with: self morphBoundsInWorld topRight + `10@0`
+											with: self morphBoundsInWorld topLeft)
+			from: self.
+		subMenu selectItem: nil ]! !
+
+!InnerListMorph methodsFor: '*Lazaro' stamp: 'GC 7/21/2018 23:01:58'!
+selectedRow: index
+	"select the index-th row.  if nil, remove the current selection"
+	selectedRow _ index.
+	highlightedRow _ nil.
+	ScreenReader say: self selectedRowName.
+	self redrawNeeded! !
+
+!InnerListMorph methodsFor: '*Lazaro' stamp: 'GC 7/21/2018 23:00:50'!
+selectedRowName
+	
+	(selectedRow = 0) ifTrue: [ ^ '' ] ifFalse: [ ^ self item: self selectedRow ]! !
