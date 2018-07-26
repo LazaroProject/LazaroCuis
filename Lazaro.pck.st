@@ -1,6 +1,6 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3345] on 22 July 2018 at 2:52:26 am'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #3345] on 26 July 2018 at 12:31:52 am'!
 'Description Lazaro for CUIS'!
-!provides: 'Lazaro' 1 3!
+!provides: 'Lazaro' 1 4!
 !requires: 'OSProcess' 1 6 nil!
 !requires: 'SqueakCompatibility' 1 28 nil!
 SystemOrganization addCategory: #Lazaro!
@@ -22,12 +22,21 @@ doNotUseTTS
 
 	usingTTS := false! !
 
-!ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/21/2018 21:30:34'!
-say: someText
+!ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/22/2018 16:21:32'!
+humanize: aText
 
-	usingTTS ifNil: [ usingTTS := false ].
+	^ aText string withBlanksCondensed! !
+
+!ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/26/2018 00:30:34'!
+say: aText
+	| humanizedText command |
 	
-	usingTTS ifTrue: [ OSProcess command: ('say ', someText) ] ifFalse: [ Transcript show: someText; nl ]! !
+	humanizedText := self humanize: aText.
+	command := 'say ', humanizedText surroundedBySingleQuotes.
+	
+	usingTTS ifNil: [ usingTTS := false ].	
+	usingTTS ifTrue: [ OSProcess command: (command) ] 
+				ifFalse: [ Transcript show: command; nl ]! !
 
 !ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/21/2018 23:28:07'!
 switchTTSUsage
@@ -103,6 +112,32 @@ selectedRow: index
 selectedRowName
 	
 	(selectedRow = 0) ifTrue: [ ^ '' ] ifFalse: [ ^ self item: self selectedRow ]! !
+
+!InnerTextMorph methodsFor: '*Lazaro' stamp: 'GC 7/22/2018 03:32:19'!
+contents
+
+	^ model actualContents! !
+
+!InnerTextMorph methodsFor: '*Lazaro' stamp: 'GC 7/22/2018 03:36:53'!
+processKeyStroke: evt
+	| action |
+
+	(acceptOnCR and: [evt isReturnKey])
+		ifTrue: [^ self acceptContents].
+
+	self pauseBlinking.
+	evt isReturnKey ifTrue: [	"Return - check for special action"
+		action _ self crAction.
+		action ifNotNil: [
+			^action value]].
+	evt anyModifierKeyPressed ifTrue: [ (evt keyCharacter == $r) ifTrue: [ ScreenReader say: self contents ] ].
+	self handleInteraction: [ editor processKeyStroke: evt ].
+
+	"Is this really needed? It produces whole morph invalidation just by (for example)
+	moving the cursor around... (jmv Aug 6, 2014)"
+	"self updateFromTextComposition."
+
+	self scrollSelectionIntoView! !
 
 !TheWorldMenu methodsFor: '*Lazaro' stamp: 'GC 7/22/2018 02:52:05'!
 preferencesMenu
