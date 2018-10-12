@@ -1,6 +1,6 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3345] on 26 July 2018 at 12:31:52 am'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #3345] on 1 August 2018 at 1:22:40 am'!
 'Description Lazaro for CUIS'!
-!provides: 'Lazaro' 1 4!
+!provides: 'Lazaro' 1 5!
 !requires: 'OSProcess' 1 6 nil!
 !requires: 'SqueakCompatibility' 1 28 nil!
 SystemOrganization addCategory: #Lazaro!
@@ -14,7 +14,7 @@ Object subclass: #ScreenReader
 	category: 'Lazaro'!
 !classDefinition: 'ScreenReader class' category: #Lazaro!
 ScreenReader class
-	instanceVariableNames: 'usingTTS'!
+	instanceVariableNames: 'usingTTS currentProcess'!
 
 
 !ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/21/2018 21:31:51'!
@@ -27,16 +27,25 @@ humanize: aText
 
 	^ aText string withBlanksCondensed! !
 
-!ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/26/2018 00:30:34'!
+!ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 8/1/2018 01:19:07'!
+init
+	usingTTS ifNil: [ usingTTS := false ].
+	currentProcess ifNil: [ currentProcess := OSProcess thisOSProcess ].! !
+
+!ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 8/1/2018 01:19:01'!
 say: aText
 	| humanizedText command |
 	
 	humanizedText := self humanize: aText.
 	command := 'say ', humanizedText surroundedBySingleQuotes.
 	
-	usingTTS ifNil: [ usingTTS := false ].	
-	usingTTS ifTrue: [ OSProcess command: (command) ] 
-				ifFalse: [ Transcript show: command; nl ]! !
+	self init.
+	usingTTS ifFalse: [ Transcript show: command; nl ]
+				ifTrue: [
+					currentProcess kill.
+					currentProcess := OSProcess command: (command)
+				] 
+				! !
 
 !ScreenReader class methodsFor: 'as yet unclassified' stamp: 'GC 7/21/2018 23:28:07'!
 switchTTSUsage
@@ -231,3 +240,7 @@ preferencesMenu
 				#balloonText 	-> 		'view and change various options.'
 			} asDictionary.
 		}`! !
+
+!OSProcess methodsFor: '*Lazaro' stamp: 'GC 8/1/2018 01:11:09'!
+kill
+	OSProcess command: 'kill -9 ', self pid asString! !
